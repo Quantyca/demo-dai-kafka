@@ -1,7 +1,3 @@
-# kafka-realtime-stock
-A demo to compute stock in realtime with Kafka
-
-
 = Realtime stock with Kafka and KSQL - Hands on Guide
 Giulio Scotti <giulio.scotti@quantyca.it>
 v0.10, May 27, 2019
