@@ -1,0 +1,1 @@
+curl -X POST -H "Content-Type: application/vnd.kafka.json.v2+json" --data '{"records":[{"value":{"STORE_COD":"STORE2", "PRODUCT_COD":"PROD2", "ORDERS_COD":"ORDER2", "ORDERS_ROW_ID":1, "ORDERS_TIMESTAMP":"1555576682000", "SOLD_QTY":4, "INSERT_TIMESTAMP":"1555576682000"}}]}' "http://127.0.0.1:8082/topics/input_topic_1"
