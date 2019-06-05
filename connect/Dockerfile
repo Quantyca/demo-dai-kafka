@@ -15,4 +15,6 @@
 
 FROM confluentinc/cp-kafka-connect:latest
 
+ADD ./lib/* /usr/share/java/kafka-connect-jdbc/
+
 ENV CONNECT_PLUGIN_PATH="/usr/share/java,/etc/kafka-connect/jars"
