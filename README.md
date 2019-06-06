@@ -27,7 +27,7 @@ A demo to compute stock in realtime with Kafka.
     * a Kafka REST Server
     * a MySQL Database
 
-2. Open a terminal and create the Kafka topics:
+2. Create the Kafka topics:
 	
 	
 	```
@@ -143,6 +143,70 @@ A demo to compute stock in realtime with Kafka.
 	```
     press CTRL+C
     ```
+	
+13. Query the stock and keep it running:
+
+	
+	```
+    curl -X "POST" -H "Content-Type: application/vnd.ksql.v1+json; charset=utf-8" \
+	-d $'{"ksql":"SELECT * FROM STOCK_TABLE;", "streamProperties":{}
+	}' "http://ext_broker:8088/query"
+	
+    ```
+	
+14. Add another order record:
+	
+	
+	```
+    curl -X POST -H "Content-Type: application/vnd.kafka.json.v2+json" --data '{"records":[{"key":"STORE2","value":{"STORE_COD":"STORE2", "PRODUCT_COD":"PROD2", "SOLD_QTY":4}}]}' "http://ext_broker:8082/topics/ORDERS_LINES_TOPIC"
+    ```
+
+15. From the first terminal, kill the continuous query and see the results:
+
+	```
+    press CTRL+C
+    ```
+	
+16. Query the stock and keep it running:
+
+	
+	```
+    curl -X "POST" -H "Content-Type: application/vnd.ksql.v1+json; charset=utf-8" \
+	-d $'{"ksql":"SELECT * FROM STOCK_TABLE;", "streamProperties":{}
+	}' "http://ext_broker:8088/query"
+	
+    ```
+17. Insert a new movement:
+	
+	```
+    docker exec mysql mysql -u root -pok -e "INSERT INTO KAFKA.SOURCE_MOVEMENTS_TABLE (STORE_COD,PRODUCT_COD,MOV_QTA,INSERT_UPDATE_TIMESTAMP) SELECT 'STORE8','PROD3',3,CURRENT_TIMESTAMP;"
+    ```
+
+18. From the first terminal, kill the continuous query and see the results:
+
+	```
+    press CTRL+C
+    ```	
+19. Query the stock and keep it running:
+
+	
+	```
+    curl -X "POST" -H "Content-Type: application/vnd.ksql.v1+json; charset=utf-8" \
+	-d $'{"ksql":"SELECT * FROM STOCK_TABLE;", "streamProperties":{}
+	}' "http://ext_broker:8088/query"
+	
+    ```
+20. Insert a new movement:
+	
+	```
+    docker exec mysql mysql -u root -pok -e "INSERT INTO KAFKA.SOURCE_MOVEMENTS_TABLE (STORE_COD,PRODUCT_COD,MOV_QTA,INSERT_UPDATE_TIMESTAMP) SELECT 'STORE8','PROD3',3,CURRENT_TIMESTAMP;"
+    ```
+
+21. From the first terminal, kill the continuous query and see the results:
+
+	```
+    press CTRL+C
+    ```	
 	
 
 	
