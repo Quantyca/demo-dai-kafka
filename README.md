@@ -67,85 +67,88 @@ A demo to compute stock in realtime with Kafka.
     ```
 	
 	
-4. Launch the KSQL CLI: 
+	
+4. Create the KSQL Stream on movements topic; this topic contains Avro formatted messages: 
 
 	```
-    docker-compose exec ksql-cli ksql http://ksql-server:8088
+    curl -X "POST" -H "Content-Type: application/vnd.ksql.v1+json; charset=utf-8" \
+	-d $'{"ksql":"CREATE STREAM SOURCE_MOVEMENTS_STREAM WITH (kafka_topic='\''SOURCE_MOVEMENTS_TABLE'\'',value_format='\''AVRO'\'');", "streamProperties":{}
+	}' "http://ext_broker:8088/ksql"
     ```
 	
-5. From withing the KSQL cli, create the KSQL Stream on movements topic; this topic contains Avro formatted messages: 
-
-	```
-    CREATE STREAM SOURCE_MOVEMENTS_STREAM WITH (kafka_topic='SOURCE_MOVEMENTS_TABLE',value_format='AVRO');
-    ```
-	
-6. From withing the KSQL cli, create the KSQL Stream on sales topic; this topic contains JSON formatted messages: 
+5. Create the KSQL Stream on sales topic; this topic contains JSON formatted messages: 
 	
 	```
-    CREATE STREAM ORDERS_LINES_STREAM ( \
-    STORE_COD STRING, \
-    PRODUCT_COD STRING, \
-    SOLD_QTY INT) \
-    WITH (kafka_topic='ORDERS_LINES_TOPIC', value_format='JSON');
+    curl -X "POST" -H "Content-Type: application/vnd.ksql.v1+json; charset=utf-8" \
+	-d $'{"ksql":"CREATE STREAM ORDERS_LINES_STREAM (STORE_COD STRING, PRODUCT_COD STRING, SOLD_QTY INT) WITH (kafka_topic='\''ORDERS_LINES_TOPIC'\'', value_format='\''JSON'\'');", "streamProperties":{}
+	}' "http://ext_broker:8088/ksql"
     ```
 
-7. From withing the KSQL cli, convert the JSON formatted sales messages in Avro records:
+6. Convert the JSON formatted sales messages in Avro records:
 
 
 	```
-    CREATE STREAM SOURCE_ORDERS_STREAM \
-    WITH (value_format='AVRO') \
-    AS SELECT * FROM ORDERS_LINES_STREAM;
-	
+    curl -X "POST" -H "Content-Type: application/vnd.ksql.v1+json; charset=utf-8" \
+	-d $'{"ksql":"CREATE STREAM SOURCE_ORDERS_STREAM WITH (value_format='\''AVRO'\'') AS SELECT * FROM ORDERS_LINES_STREAM;", "streamProperties":{}
+	}' "http://ext_broker:8088/ksql"
     ```
 	
-8. From withing the KSQL cli, create the delta stock stream:
+7. Create the delta stock stream:
 
 	
 	```
-	CREATE STREAM DELTA_STOCK_STREAM \
-    AS SELECT \
-    STORE_COD AS STORE_COD, \
-    PRODUCT_COD AS PRODUCT_COD, \
-    MOV_QTA AS DELTA_QTY \
-    FROM SOURCE_MOVEMENTS_STREAM;
-	
+    curl -X "POST" -H "Content-Type: application/vnd.ksql.v1+json; charset=utf-8" \
+	-d $'{"ksql":"CREATE STREAM DELTA_STOCK_STREAM AS SELECT STORE_COD AS STORE_COD, PRODUCT_COD AS PRODUCT_COD, MOV_QTA AS DELTA_QTY FROM SOURCE_MOVEMENTS_STREAM;", "streamProperties":{}
+	}' "http://ext_broker:8088/ksql"
     ```
 	
-9. From withing the KSQL cli, add the orders contribute to delta stock:
+8. Add the orders contribute to delta stock:
 
 	
 	```
-    INSERT INTO DELTA_STOCK_STREAM \
-    SELECT \
-    STORE_COD AS STORE_COD, \
-    PRODUCT_COD AS PRODUCT_COD, \
-    (-1) * SOLD_QTY AS DELTA_QTY \
-    FROM SOURCE_ORDERS_STREAM;
-	
+    curl -X "POST" -H "Content-Type: application/vnd.ksql.v1+json; charset=utf-8" \
+	-d $'{"ksql":"INSERT INTO DELTA_STOCK_STREAM SELECT STORE_COD AS STORE_COD, PRODUCT_COD AS PRODUCT_COD, (-1) * SOLD_QTY AS DELTA_QTY FROM SOURCE_ORDERS_STREAM;", "streamProperties":{}
+	}' "http://ext_broker:8088/ksql"
     ```
 	
-10. From withing the KSQL cli, add the orders contribute to delta stock:
+9. Add the orders contribute to delta stock:
 
 	
 	```
-    CREATE TABLE STOCK_TABLE \ 
-    WITH (value_format='AVRO') \
-    AS SELECT \
-    STORE_COD, \
-    PRODUCT_COD, \ 
-    SUM(DELTA_QTY) AS CURRENT_STOCK_VAL \
-    FROM DELTA_STOCK_STREAM \
-    GROUP BY STORE_COD, PRODUCT_COD;
+    curl -X "POST" -H "Content-Type: application/vnd.ksql.v1+json; charset=utf-8" \
+	-d $'{"ksql":"CREATE TABLE STOCK_TABLE WITH (value_format='\''AVRO'\'') AS SELECT STORE_COD, PRODUCT_COD, SUM(DELTA_QTY) AS CURRENT_STOCK_VAL FROM DELTA_STOCK_STREAM GROUP BY STORE_COD, PRODUCT_COD;", "streamProperties":{}
+	}' "http://ext_broker:8088/ksql"
 	
     ```
 	
+10. Query the stock and keep it running:
+
+	
+	```
+    curl -X "POST" -H "Content-Type: application/vnd.ksql.v1+json; charset=utf-8" \
+	-d $'{"ksql":"SELECT * FROM STOCK_TABLE;", "streamProperties":{}
+	}' "http://ext_broker:8088/query"
+	
+    ```
+	
+11. Open another terminal and add order record:
 	
 	
-	
+	```
+    curl -X POST -H "Content-Type: application/vnd.kafka.json.v2+json" --data '{"records":[{"key":"STORE2","value":{"STORE_COD":"STORE2", "PRODUCT_COD":"PROD2", "SOLD_QTY":-4}}]}' "http://ext_broker:8082/topics/ORDERS_LINES_TOPIC"
+    ```
+
+12. From the first terminal, kill the continuous query and see the results:
+
+	```
+    press CTRL+C
+    ```
 	
 
 	
+	
+ 
+
 	
 
 	
