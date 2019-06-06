@@ -121,7 +121,7 @@ A demo to compute stock in realtime with Kafka.
 	
     ```
 	
-10. Query the stock and keep it running:
+10. From the same terminal where you started the infrastructure, query the stock and keep it running:
 
 	
 	```
@@ -131,81 +131,39 @@ A demo to compute stock in realtime with Kafka.
 	
     ```
 	
-11. Open another terminal and add order record:
+11. Open another terminal and add order record; just later, on the first terminal the update stock quantity will appear:
 	
 	
 	```
     curl -X POST -H "Content-Type: application/vnd.kafka.json.v2+json" --data '{"records":[{"key":"STORE2","value":{"STORE_COD":"STORE2", "PRODUCT_COD":"PROD2", "SOLD_QTY":-4}}]}' "http://ext_broker:8082/topics/ORDERS_LINES_TOPIC"
     ```
 
-12. From the first terminal, kill the continuous query and see the results:
-
-	```
-    press CTRL+C
-    ```
 	
-13. Query the stock and keep it running:
-
-	
-	```
-    curl -X "POST" -H "Content-Type: application/vnd.ksql.v1+json; charset=utf-8" \
-	-d $'{"ksql":"SELECT * FROM STOCK_TABLE;", "streamProperties":{}
-	}' "http://ext_broker:8088/query"
-	
-    ```
-	
-14. Add another order record:
+12. From the second terminal, add another order record; on the first terminal the update stock quantity will appear:
 	
 	
 	```
     curl -X POST -H "Content-Type: application/vnd.kafka.json.v2+json" --data '{"records":[{"key":"STORE2","value":{"STORE_COD":"STORE2", "PRODUCT_COD":"PROD2", "SOLD_QTY":4}}]}' "http://ext_broker:8082/topics/ORDERS_LINES_TOPIC"
     ```
 
-15. From the first terminal, kill the continuous query and see the results:
-
-	```
-    press CTRL+C
-    ```
-	
-16. Query the stock and keep it running:
-
-	
-	```
-    curl -X "POST" -H "Content-Type: application/vnd.ksql.v1+json; charset=utf-8" \
-	-d $'{"ksql":"SELECT * FROM STOCK_TABLE;", "streamProperties":{}
-	}' "http://ext_broker:8088/query"
-	
-    ```
-17. Insert a new movement:
+13. From the second terminal, insert a new movement; on the first terminal the update stock quantity will appear:
 	
 	```
     docker exec mysql mysql -u root -pok -e "INSERT INTO KAFKA.SOURCE_MOVEMENTS_TABLE (STORE_COD,PRODUCT_COD,MOV_QTA,INSERT_UPDATE_TIMESTAMP) SELECT 'STORE8','PROD3',3,CURRENT_TIMESTAMP;"
     ```
 
-18. From the first terminal, kill the continuous query and see the results:
-
-	```
-    press CTRL+C
-    ```	
-19. Query the stock and keep it running:
-
-	
-	```
-    curl -X "POST" -H "Content-Type: application/vnd.ksql.v1+json; charset=utf-8" \
-	-d $'{"ksql":"SELECT * FROM STOCK_TABLE;", "streamProperties":{}
-	}' "http://ext_broker:8088/query"
-	
-    ```
-20. Insert a new movement:
+14. From the second terminal, insert a new movement; on the first terminal the update stock quantity will appear:
 	
 	```
     docker exec mysql mysql -u root -pok -e "INSERT INTO KAFKA.SOURCE_MOVEMENTS_TABLE (STORE_COD,PRODUCT_COD,MOV_QTA,INSERT_UPDATE_TIMESTAMP) SELECT 'STORE8','PROD3',3,CURRENT_TIMESTAMP;"
     ```
 
-21. From the first terminal, kill the continuous query and see the results:
+15. When you are satisfied, from the first terminal, kill the continuous query and destroy the infrastructure.
 
 	```
     press CTRL+C
+	docker-compose down
+	
     ```	
 	
 
