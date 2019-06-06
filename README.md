@@ -14,28 +14,31 @@ A demo to compute stock in realtime with Kafka.
 
 ## Prepare the environment
 
-1. Bring up the stack
+0. Open two distinct terminal windows
+
+1. From terminal 1, clone the repository and bring up the stack
     ```
-    git clone https://github.com/Quantyca/kafka-realtime-stock.git
-    cd kafka-realtime-stock
-    docker-compose up -d --build
+    git clone https://github.com/Quantyca/kafka-realtime-stock.git;
+    cd kafka-realtime-stock;
+    docker-compose up -d --build;
     ```
     This brings up the stack and loads the necessary configuration:
-    * a Kafka node
-    * a Zookeeper node
-    * a Kafka Connect server
-    * a Kafka REST Server
-    * a MySQL Database
+    * a Kafka broker
+    * a Zookeeper server
+    * a Kafka Connect worker
+    * a Kafka REST proxy
+	* a Schema Registry sever
+	* a KSQL Server
+    * a MySQL database
 
-2. Create the Kafka topics:
-	
+2. One contribute to the stock is given by the online orders data. So, first you have to create a Kafka topic where these data will be   written to. You are going to write orders data in JSON format. For performing this task, from terminal n.1, launch the call to the REST proxy (producing a neutral order):
 	
 	```
     curl -X POST -H "Content-Type: application/vnd.kafka.json.v2+json" --data '{"records":[{"key":"STORE2","value":{"STORE_COD":"STORE2", "PRODUCT_COD":"PROD2", "SOLD_QTY":0}}]}' "http://ext_broker:8082/topics/ORDERS_LINES_TOPIC"
     ```
 	
 	
-3. Deploy the JDBC Source Connector:	
+3. The other contribute is given by the warehouse movement, extracted from a database table. The table has been automatically created when you started the infrastructure and a neutral movement has been inserted. For extracting data, from terminal 1, deploy the JDBC Source Connector by launching the rest call to the Connect Worker REST API (this will automatically create a topic and write data extracted from the database table in Avro format, registering automatically the schema into the Schema Registry):	
 	
 	```
     curl -X POST http://ext_broker:8083/connectors -H "Content-Type: application/json" -d '{
@@ -68,7 +71,7 @@ A demo to compute stock in realtime with Kafka.
 	
 	
 	
-4. Create the KSQL Stream on movements topic; this topic contains Avro formatted messages: 
+4. For doing the stream processing needed, you have to create KSQL abstractions over Kafka topics. So, from terminal n.1, create the KSQL Stream on movements topic, by launching the rest call to the KSQL Server; this topic contains Avro formatted messages: 
 
 	```
     curl -X "POST" -H "Content-Type: application/vnd.ksql.v1+json; charset=utf-8" \
@@ -76,7 +79,7 @@ A demo to compute stock in realtime with Kafka.
 	}' "http://ext_broker:8088/ksql"
     ```
 	
-5. Create the KSQL Stream on sales topic; this topic contains JSON formatted messages: 
+5. You have to do the same operation over the orders topic but, in this case, the messages are formatted in JSON. So, from terminal n.1, create the KSQL Stream on sales topic; you have to specify the schema esplicitly: 
 	
 	```
     curl -X "POST" -H "Content-Type: application/vnd.ksql.v1+json; charset=utf-8" \
@@ -84,7 +87,7 @@ A demo to compute stock in realtime with Kafka.
 	}' "http://ext_broker:8088/ksql"
     ```
 
-6. Convert the JSON formatted sales messages in Avro records:
+6. In order to manage all the data in Avro format, use KSQL to cconvert the JSON formatted orders messages in Avro records:
 
 
 	```
@@ -93,7 +96,7 @@ A demo to compute stock in realtime with Kafka.
 	}' "http://ext_broker:8088/ksql"
     ```
 	
-7. Create the delta stock stream:
+7. You have to do a UNION operation between the two contributes, for building an unique stream of stock variations. So, from terminal n.1, use KSQL to create the delta stock stream as a select from the warehouse movements stream:
 
 	
 	```
@@ -102,7 +105,7 @@ A demo to compute stock in realtime with Kafka.
 	}' "http://ext_broker:8088/ksql"
     ```
 	
-8. Add the orders contribute to delta stock:
+8. In order to get the UNION, from terminal n.1, you have to add the orders contribute to delta stock stream (again using KSQL):
 
 	
 	```
@@ -111,7 +114,7 @@ A demo to compute stock in realtime with Kafka.
 	}' "http://ext_broker:8088/ksql"
     ```
 	
-9. Add the orders contribute to delta stock:
+9. Now that you have the unique source of stock variations, you can build a stream processing application that performs an aggregation over the delta stock and computes the real time stock snapshot.  The stock is calculated as a continuous sum of variations, grouping by the pair <RODUCT, STORE>. With KSQL, you can easily build such an application. From terminal n.1, launch the REST call:
 
 	
 	```
@@ -121,7 +124,7 @@ A demo to compute stock in realtime with Kafka.
 	
     ```
 	
-10. From the same terminal where you started the infrastructure, query the stock and keep it running:
+10. Now, you can start a continuous query over the Ktable representing the stock, for consuming results in real time. From terminal n.1, launch the query on the stock table and keep it running:
 
 	
 	```
@@ -131,34 +134,34 @@ A demo to compute stock in realtime with Kafka.
 	
     ```
 	
-11. Open another terminal and add order record; just later, on the first terminal the update stock quantity will appear:
-	
-	
-	```
-    curl -X POST -H "Content-Type: application/vnd.kafka.json.v2+json" --data '{"records":[{"key":"STORE2","value":{"STORE_COD":"STORE2", "PRODUCT_COD":"PROD2", "SOLD_QTY":-4}}]}' "http://ext_broker:8082/topics/ORDERS_LINES_TOPIC"
-    ```
-
-	
-12. From the second terminal, add another order record; on the first terminal the update stock quantity will appear:
+11. Now, keeping the query running on terminal n.1, you can simulate the arrival of new orders by submitting REST call from terminal n.2; just later, by looking at terminal n.1, the updated stock quantity will appear:
 	
 	
 	```
     curl -X POST -H "Content-Type: application/vnd.kafka.json.v2+json" --data '{"records":[{"key":"STORE2","value":{"STORE_COD":"STORE2", "PRODUCT_COD":"PROD2", "SOLD_QTY":4}}]}' "http://ext_broker:8082/topics/ORDERS_LINES_TOPIC"
     ```
 
-13. From the second terminal, insert a new movement; on the first terminal the update stock quantity will appear:
+	
+12. Again from terminal n.2, produce the inverse order as before (the cancellation order); look at terminal n.1 and you will see the stock quantity has been reset:
+	
+	
+	```
+    curl -X POST -H "Content-Type: application/vnd.kafka.json.v2+json" --data '{"records":[{"key":"STORE2","value":{"STORE_COD":"STORE2", "PRODUCT_COD":"PROD2", "SOLD_QTY":4}}]}' "http://ext_broker:8082/topics/ORDERS_LINES_TOPIC"
+    ```
+
+13. Check the logic also against contribute of warehouse movements. From terminal n.2, produce a movement into the database table and look at what happens in terminal n.1:
 	
 	```
     docker exec mysql mysql -u root -pok -e "INSERT INTO KAFKA.SOURCE_MOVEMENTS_TABLE (STORE_COD,PRODUCT_COD,MOV_QTA,INSERT_UPDATE_TIMESTAMP) SELECT 'STORE8','PROD3',3,CURRENT_TIMESTAMP;"
     ```
 
-14. From the second terminal, insert a new movement; on the first terminal the update stock quantity will appear:
+14. Now, from terminal n.2, produce a movement equal to the previous and check the updated value in terminal n.1:
 	
 	```
     docker exec mysql mysql -u root -pok -e "INSERT INTO KAFKA.SOURCE_MOVEMENTS_TABLE (STORE_COD,PRODUCT_COD,MOV_QTA,INSERT_UPDATE_TIMESTAMP) SELECT 'STORE8','PROD3',3,CURRENT_TIMESTAMP;"
     ```
 
-15. When you are satisfied, from the first terminal, kill the continuous query and destroy the infrastructure.
+15. When you are satisfied, kill the continuous query and destroy the infrastructure.
 
 	```
     press CTRL+C
