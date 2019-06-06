@@ -30,6 +30,8 @@ A demo to compute stock in realtime with Kafka.
 	* a Schema Registry sever
 	* a KSQL Server
     * a MySQL database
+	
+	NB: this first setup could take a few minutes: wait that all containers are started and properly configured before going on (more or less 3 minutes).
 
 2. One contribute to the stock is given by the online orders data. So, first you have to create a Kafka topic where these data will be   written to. You are going to write orders data in JSON format. For performing this task, from terminal n.1, launch the call to the REST proxy (producing a neutral order):
 	
