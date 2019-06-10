@@ -10,7 +10,12 @@ A demo to compute stock in realtime with Kafka.
 
 ## Requirements
 
-* TO BE DEFINED
+* Git: you can download from it from https://git-scm.com/downloads
+* For Linux: 
+	1. Docker: you can download it from https://docs.docker.com/install/linux/docker-ce/centos/
+	2. Docker Compose: you can download it from https://docs.docker.com/compose/install/ 
+* For windows: 
+	1. Docker Toolbox: you can download it from https://docs.docker.com/toolbox/toolbox_install_windows/
 
 ## Prepare the environment
 
