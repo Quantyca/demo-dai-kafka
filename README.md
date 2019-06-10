@@ -14,7 +14,7 @@ A demo to compute stock in realtime with Kafka.
 * For Linux: 
 	1. Docker: you can download it from https://docs.docker.com/install/linux/docker-ce/centos/
 	2. Docker Compose: you can download it from https://docs.docker.com/compose/install/ 
-* For windows: 
+* For Windows: 
 	1. Docker Toolbox: you can download it from https://docs.docker.com/toolbox/toolbox_install_windows/
 
 ## Prepare the environment
@@ -23,8 +23,8 @@ A demo to compute stock in realtime with Kafka.
 
 1. From terminal 1, clone the repository and bring up the stack
     ```
-    git clone https://github.com/Quantyca/kafka-realtime-stock.git;
-    cd kafka-realtime-stock;
+    git clone https://github.com/Quantyca/demo-dai-kafka.git;
+    cd demo-dai-kafka;
     docker-compose up -d --build;
     ```
     This brings up the stack and loads the necessary configuration:
