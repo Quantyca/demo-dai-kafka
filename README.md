@@ -136,32 +136,33 @@ A demo to compute stock in realtime with Kafka.
 	
     ```
 	
-11. Now, keeping the query running on terminal n.1, you can simulate the arrival of new orders by submitting REST call from terminal n.2; just later, by looking at terminal n.1, the updated stock quantity will appear:
+11. Now, from terminal n.2, produce a movement into the database table and, keeping the query running on terminal n.1, look at what appears as query results:
+	
+	```
+    docker exec mysql mysql -u root -pok -e "INSERT INTO KAFKA.SOURCE_MOVEMENTS_TABLE (STORE_COD,PRODUCT_COD,MOV_QTA,INSERT_UPDATE_TIMESTAMP) SELECT 'STORE8','PROD3',10,CURRENT_TIMESTAMP;"
+    ```
+	
+12. Now, keeping the query running on terminal n.1, you can simulate the arrival of new orders by submitting REST call from terminal n.2; just later, by looking at terminal n.1, the updated stock quantity will appear:
 	
 	
 	```
-    curl -X POST -H "Content-Type: application/vnd.kafka.json.v2+json" --data '{"records":[{"key":"STORE2","value":{"STORE_COD":"STORE2", "PRODUCT_COD":"PROD2", "SOLD_QTY":4}}]}' "http://ext_broker:8082/topics/ORDERS_LINES_TOPIC"
+    curl -X POST -H "Content-Type: application/vnd.kafka.json.v2+json" --data '{"records":[{"key":"STORE8","value":{"STORE_COD":"STORE8", "PRODUCT_COD":"PROD3", "SOLD_QTY":4}}]}' "http://ext_broker:8082/topics/ORDERS_LINES_TOPIC"
     ```
 
 	
-12. Again from terminal n.2, produce the inverse order as before (the cancellation order); look at terminal n.1 and you will see the stock quantity has been reset:
+13. Now, from terminal n.2, simulate the arrival of new items in the store and check the updated value in terminal n.1:
+	
+	```
+    docker exec mysql mysql -u root -pok -e "INSERT INTO KAFKA.SOURCE_MOVEMENTS_TABLE (STORE_COD,PRODUCT_COD,MOV_QTA,INSERT_UPDATE_TIMESTAMP) SELECT 'STORE8','PROD3',5,CURRENT_TIMESTAMP;"
+    ```
+	
+14. Again from terminal n.2, another order; look at terminal n.1 and you will see the stock has changed again:
 	
 	
 	```
-    curl -X POST -H "Content-Type: application/vnd.kafka.json.v2+json" --data '{"records":[{"key":"STORE2","value":{"STORE_COD":"STORE2", "PRODUCT_COD":"PROD2", "SOLD_QTY":-4}}]}' "http://ext_broker:8082/topics/ORDERS_LINES_TOPIC"
+    curl -X POST -H "Content-Type: application/vnd.kafka.json.v2+json" --data '{"records":[{"key":"STORE8","value":{"STORE_COD":"STORE8", "PRODUCT_COD":"PROD3", "SOLD_QTY":9}}]}' "http://ext_broker:8082/topics/ORDERS_LINES_TOPIC"
     ```
 
-13. Check the logic also against contribute of warehouse movements. From terminal n.2, produce a movement into the database table and look at what happens in terminal n.1:
-	
-	```
-    docker exec mysql mysql -u root -pok -e "INSERT INTO KAFKA.SOURCE_MOVEMENTS_TABLE (STORE_COD,PRODUCT_COD,MOV_QTA,INSERT_UPDATE_TIMESTAMP) SELECT 'STORE8','PROD3',3,CURRENT_TIMESTAMP;"
-    ```
-
-14. Now, from terminal n.2, produce a movement equal to the previous and check the updated value in terminal n.1:
-	
-	```
-    docker exec mysql mysql -u root -pok -e "INSERT INTO KAFKA.SOURCE_MOVEMENTS_TABLE (STORE_COD,PRODUCT_COD,MOV_QTA,INSERT_UPDATE_TIMESTAMP) SELECT 'STORE8','PROD3',3,CURRENT_TIMESTAMP;"
-    ```
 
 15. When you are satisfied, kill the continuous query and destroy the infrastructure.
 
