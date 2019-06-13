@@ -54,7 +54,7 @@ A demo to compute stock in realtime with Kafka.
 	```
     curl -X POST -H "Content-Type: application/vnd.kafka.json.v2+json" --data '{"records":[{"key":"STORE2","value":{"STORE_COD":"STORE2", "PRODUCT_COD":"PROD2", "SOLD_QTY":0}}]}' "http://ext_broker:8082/topics/ORDERS_LINES_TOPIC"
     ```
-You should receive a response like this:
+	You should receive a response like this:
     ```
     {"offsets":[{"partition":0,"offset":0,"error_code":null,"error":null}],"key_schema_id":null,"value_schema_id":null}	
     ```
@@ -91,7 +91,7 @@ You should receive a response like this:
     }'
     ```
 	
-You should receive a response like this:
+	You should receive a response like this:
     ```
 	{"name":"SOURCE_MOVEMENTS_CONNECTOR","config":{"connector.class":"io.confluent.connect.jdbc.JdbcSourceConnector","connection.url":"jdbc:mysql://mysql:3306/?characterEncoding=latin1&useConfigs=maxPerformance","connection.user":"root","connection.password":"ok","topic.prefix":"SOURCE_MOVEMENTS_TABLE","mode":"timestamp","query":"SELECT * FROM KAFKA.SOURCE_MOVEMENTS_TABLE","timestamp.column.name":"INSERT_UPDATE_TIMESTAMP","timestamp.delay.interval.ms":"-7200000","key.converter":"org.apache.kafka.connect.storage.StringConverter","value.converter":"io.confluent.connect.avro.AvroConverter","value.converter.schema.registry.url":"http://schema-registry:8081","transforms":"createKey,castInteger,timestampConverter","transforms.createKey.type":"org.apache.kafka.connect.transforms.ValueToKey","transforms.createKey.fields":"STORE_COD","transforms.castInteger.type":"org.apache.kafka.connect.transforms.Cast$Value","transforms.castInteger.spec":"MOV_ID:int64,MOV_QTA:int32","transforms.timestampConverter.type":"org.apache.kafka.connect.transforms.TimestampConverter$Value","transforms.timestampConverter.target.type":"unix","transforms.timestampConverter.field":"INSERT_UPDATE_UTC_TIMESTAMP","transforms.timestampConverter.format":"yyyy-MM-dd HH:mm:ss.sss","name":"SOURCE_MOVEMENTS_CONNECTOR"},"tasks":[{"connector":"SOURCE_MOVEMENTS_CONNECTOR","task":0}],"type":"source"}
 	```
@@ -104,7 +104,7 @@ You should receive a response like this:
 	}' "http://ext_broker:8088/ksql"
     ```
 	
-You should receive a response like this:
+	You should receive a response like this:
     ```
 	[{"@type":"currentStatus","statementText":"CREATE STREAM SOURCE_MOVEMENTS_STREAM \n(ID INTEGER, STORE_COD STRING, PRODUCT_COD STRING, MOV_QTA INTEGER, INSERT_UPDATE_TIMESTAMP BIGINT) WITH (KAFKA_TOPIC='SOURCE_MOVEMENTS_TABLE', VALUE_FORMAT='AVRO', AVRO_SCHEMA_ID='1');","commandId":"stream/SOURCE_MOVEMENTS_STREAM/create","commandStatus":{"status":"SUCCESS","message":"Stream created"}}]
 	```
@@ -117,7 +117,7 @@ You should receive a response like this:
 	}' "http://ext_broker:8088/ksql"	
     ```
 	
-You should receive a response like this:
+	You should receive a response like this:
     ```
 	[{"@type":"currentStatus","statementText":"CREATE STREAM ORDERS_LINES_STREAM (STORE_COD STRING, PRODUCT_COD STRING, SOLD_QTY INT) WITH (kafka_topic='ORDERS_LINES_TOPIC', value_format='JSON');","commandId":"stream/ORDERS_LINES_STREAM/create","commandStatus":{"status":"SUCCESS","message":"Stream created"}}]
 	```
@@ -130,7 +130,7 @@ You should receive a response like this:
 	}' "http://ext_broker:8088/ksql"
     ```
 	
-You should receive a response like this:
+	You should receive a response like this:
     ```
 	[{"@type":"currentStatus","statementText":"CREATE STREAM SOURCE_ORDERS_STREAM WITH (value_format='AVRO') AS SELECT * FROM ORDERS_LINES_STREAM;","commandId":"stream/SOURCE_ORDERS_STREAM/create","commandStatus":{"status":"SUCCESS","message":"Stream created and running"}}]
 	```
@@ -143,7 +143,7 @@ You should receive a response like this:
 	}' "http://ext_broker:8088/ksql"
     ```
 	
-You should receive a response like this:
+	You should receive a response like this:
     ```
 	[{"@type":"currentStatus","statementText":"CREATE STREAM DELTA_STOCK_STREAM AS SELECT STORE_COD AS STORE_COD, PRODUCT_COD AS PRODUCT_COD, MOV_QTA AS DELTA_QTY FROM SOURCE_MOVEMENTS_STREAM;","commandId":"stream/DELTA_STOCK_STREAM/create","commandStatus":{"status":"SUCCESS","message":"Stream created and running"}}]
 	```
@@ -156,7 +156,7 @@ You should receive a response like this:
 	}' "http://ext_broker:8088/ksql"
     ```
 	
-You should receive a response like this:
+	You should receive a response like this:
     ```
 	[{"@type":"currentStatus","statementText":"INSERT INTO DELTA_STOCK_STREAM SELECT STORE_COD AS STORE_COD, PRODUCT_COD AS PRODUCT_COD, (-1) * SOLD_QTY AS DELTA_QTY FROM SOURCE_ORDERS_STREAM;","commandId":"stream/DELTA_STOCK_STREAM/create","commandStatus":{"status":"SUCCESS","message":"Insert Into query is running."}}]
 	```
@@ -169,7 +169,7 @@ You should receive a response like this:
 	}' "http://ext_broker:8088/ksql"
     ```
 	
-You should receive a response like this:
+	You should receive a response like this:
     ```
 	[{"@type":"currentStatus","statementText":"CREATE TABLE STOCK_TABLE WITH (value_format='AVRO') AS SELECT STORE_COD, PRODUCT_COD, SUM(DELTA_QTY) AS CURRENT_STOCK_VAL FROM DELTA_STOCK_STREAM GROUP BY STORE_COD, PRODUCT_COD;","commandId":"table/STOCK_TABLE/create","commandStatus":{"status":"SUCCESS","message":"Table created and running"}}]
 	```
@@ -182,7 +182,7 @@ You should receive a response like this:
 	}' "http://ext_broker:8088/query"
     ```
 	
-You should see a scrolling view in the terminal.
+	You should see a scrolling view in the terminal.
 	
 11. Now, from terminal n.2, produce a movement into the database table and, keeping the query running on terminal n.1, look at what appears as query results:
 	
@@ -190,7 +190,7 @@ You should see a scrolling view in the terminal.
     docker exec mysql mysql -u root -pok -e "INSERT INTO KAFKA.SOURCE_MOVEMENTS_TABLE (STORE_COD,PRODUCT_COD,MOV_QTA,INSERT_UPDATE_TIMESTAMP) SELECT 'STORE8','PROD3',10,CURRENT_TIMESTAMP;"
     ```
 	
-Looking at termianl 1, you should see a line like this:
+	Looking at termianl 1, you should see a line like this:
     ```
 	{"row":{"columns":[1560410975591,"STORE8|+|PROD3","STORE8","PROD3",10]},"errorMessage":null,"finalMessage":null}
 	```
@@ -201,7 +201,7 @@ Looking at termianl 1, you should see a line like this:
     docker exec mysql mysql -u root -pok -e "INSERT INTO KAFKA.SOURCE_MOVEMENTS_TABLE (STORE_COD,PRODUCT_COD,MOV_QTA,INSERT_UPDATE_TIMESTAMP) SELECT 'STORE10','PROD2',50,CURRENT_TIMESTAMP;"
     ```
 	
-Looking at termianl 1, you should see a line like this:
+	Looking at termianl 1, you should see a line like this:
     ```
 	{"row":{"columns":[1560414788311,"STORE10|+|PROD2","STORE10","PROD2",50]},"errorMessage":null,"finalMessage":null}
 	```
@@ -212,7 +212,7 @@ Looking at termianl 1, you should see a line like this:
     curl -X POST -H "Content-Type: application/vnd.kafka.json.v2+json" --data '{"records":[{"key":"STORE8","value":{"STORE_COD":"STORE8", "PRODUCT_COD":"PROD3", "SOLD_QTY":4}}]}' "http://ext_broker:8082/topics/ORDERS_LINES_TOPIC"
     ```
 	
-Looking at termianl 1, you should see a line like this:
+	Looking at termianl 1, you should see a line like this:
     ```
 	{"row":{"columns":[1560410975591,"STORE8|+|PROD3","STORE8","PROD3",6]},"errorMessage":null,"finalMessage":null}
 	```
@@ -223,7 +223,7 @@ Looking at termianl 1, you should see a line like this:
     curl -X POST -H "Content-Type: application/vnd.kafka.json.v2+json" --data '{"records":[{"key":"STORE10","value":{"STORE_COD":"STORE10", "PRODUCT_COD":"PROD2", "SOLD_QTY":10}}]}' "http://ext_broker:8082/topics/ORDERS_LINES_TOPIC"
     ```
 	
-Looking at termianl 1, you should see a line like this:
+	Looking at termianl 1, you should see a line like this:
     ```
 	{"row":{"columns":[1560414819765,"STORE10|+|PROD2","STORE10","PROD2",40]},"errorMessage":null,"finalMessage":null}
 	```
@@ -234,7 +234,7 @@ Looking at termianl 1, you should see a line like this:
     docker exec mysql mysql -u root -pok -e "INSERT INTO KAFKA.SOURCE_MOVEMENTS_TABLE (STORE_COD,PRODUCT_COD,MOV_QTA,INSERT_UPDATE_TIMESTAMP) SELECT 'STORE8','PROD3',5,CURRENT_TIMESTAMP;"
     ```
 	
-Looking at termianl 1, you should see a line like this:
+	Looking at termianl 1, you should see a line like this:
     ```
 	{"row":{"columns":[1560411075743,"STORE8|+|PROD3","STORE8","PROD3",11]},"errorMessage":null,"finalMessage":null}
 	```
@@ -245,7 +245,7 @@ Looking at termianl 1, you should see a line like this:
     docker exec mysql mysql -u root -pok -e "INSERT INTO KAFKA.SOURCE_MOVEMENTS_TABLE (STORE_COD,PRODUCT_COD,MOV_QTA,INSERT_UPDATE_TIMESTAMP) SELECT 'STORE10','PROD2',2,CURRENT_TIMESTAMP;"
     ```
 	
-Looking at termianl 1, you should see a line like this:
+	Looking at termianl 1, you should see a line like this:
     ```
 	{"row":{"columns":[1560414848456,"STORE10|+|PROD2","STORE10","PROD2",42]},"errorMessage":null,"finalMessage":null}
 	```
@@ -256,7 +256,7 @@ Looking at termianl 1, you should see a line like this:
     curl -X POST -H "Content-Type: application/vnd.kafka.json.v2+json" --data '{"records":[{"key":"STORE8","value":{"STORE_COD":"STORE8", "PRODUCT_COD":"PROD3", "SOLD_QTY":9}}]}' "http://ext_broker:8082/topics/ORDERS_LINES_TOPIC"
     ```
 	
-Looking at termianl 1, you should see a line like this:
+	Looking at termianl 1, you should see a line like this:
     ```
 	{"row":{"columns":[1560411106820,"STORE8|+|PROD3","STORE8","PROD3",2]},"errorMessage":null,"finalMessage":null}
 	```
@@ -267,7 +267,7 @@ Looking at termianl 1, you should see a line like this:
     curl -X POST -H "Content-Type: application/vnd.kafka.json.v2+json" --data '{"records":[{"key":"STORE10","value":{"STORE_COD":"STORE10", "PRODUCT_COD":"PROD2", "SOLD_QTY":20}}]}' "http://ext_broker:8082/topics/ORDERS_LINES_TOPIC"
     ```
 	
-Looking at termianl 1, you should see a line like this:
+	Looking at termianl 1, you should see a line like this:
     ```
 	{"row":{"columns":[1560414883451,"STORE10|+|PROD2","STORE10","PROD2",22]},"errorMessage":null,"finalMessage":null}
 	```
