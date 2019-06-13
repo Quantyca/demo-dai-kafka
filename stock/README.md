@@ -195,7 +195,18 @@ Looking at termianl 1, you should see a line like this:
 	{"row":{"columns":[1560410975591,"STORE8|+|PROD3","STORE8","PROD3",10]},"errorMessage":null,"finalMessage":null}
 	```
 	
-12. Now, keeping the query running on terminal n.1, you can simulate the arrival of new orders by submitting REST call from terminal n.2; just later, by looking at terminal n.1, the updated stock quantity will appear:	
+12. Now, from terminal n.2, produce a movement into the database table and, keeping the query running on terminal n.1, look at what appears as query results:
+	
+	```
+    docker exec mysql mysql -u root -pok -e "INSERT INTO KAFKA.SOURCE_MOVEMENTS_TABLE (STORE_COD,PRODUCT_COD,MOV_QTA,INSERT_UPDATE_TIMESTAMP) SELECT 'STORE10','PROD2',50,CURRENT_TIMESTAMP;"
+    ```
+	
+Looking at termianl 1, you should see a line like this:
+    ```
+	{"row":{"columns":[1560414788311,"STORE10|+|PROD2","STORE10","PROD2",50]},"errorMessage":null,"finalMessage":null}
+	```
+	
+13. Now, keeping the query running on terminal n.1, you can simulate the arrival of new orders by submitting REST call from terminal n.2; just later, by looking at terminal n.1, the updated stock quantity will appear:	
 	
 	```
     curl -X POST -H "Content-Type: application/vnd.kafka.json.v2+json" --data '{"records":[{"key":"STORE8","value":{"STORE_COD":"STORE8", "PRODUCT_COD":"PROD3", "SOLD_QTY":4}}]}' "http://ext_broker:8082/topics/ORDERS_LINES_TOPIC"
@@ -205,8 +216,19 @@ Looking at termianl 1, you should see a line like this:
     ```
 	{"row":{"columns":[1560410975591,"STORE8|+|PROD3","STORE8","PROD3",6]},"errorMessage":null,"finalMessage":null}
 	```
+	
+14. Now, keeping the query running on terminal n.1, you can simulate the arrival of new orders by submitting REST call from terminal n.2; just later, by looking at terminal n.1, the updated stock quantity will appear:	
+	
+	```
+    curl -X POST -H "Content-Type: application/vnd.kafka.json.v2+json" --data '{"records":[{"key":"STORE10","value":{"STORE_COD":"STORE10", "PRODUCT_COD":"PROD2", "SOLD_QTY":10}}]}' "http://ext_broker:8082/topics/ORDERS_LINES_TOPIC"
+    ```
+	
+Looking at termianl 1, you should see a line like this:
+    ```
+	{"row":{"columns":[1560414819765,"STORE10|+|PROD2","STORE10","PROD2",40]},"errorMessage":null,"finalMessage":null}
+	```
 
-13. Now, from terminal n.2, simulate the arrival of new items in the store and check the updated value in terminal n.1:
+15. Now, from terminal n.2, simulate the arrival of new items in the store and check the updated value in terminal n.1:
 	
 	```
     docker exec mysql mysql -u root -pok -e "INSERT INTO KAFKA.SOURCE_MOVEMENTS_TABLE (STORE_COD,PRODUCT_COD,MOV_QTA,INSERT_UPDATE_TIMESTAMP) SELECT 'STORE8','PROD3',5,CURRENT_TIMESTAMP;"
@@ -217,7 +239,18 @@ Looking at termianl 1, you should see a line like this:
 	{"row":{"columns":[1560411075743,"STORE8|+|PROD3","STORE8","PROD3",11]},"errorMessage":null,"finalMessage":null}
 	```
 	
-14. Again from terminal n.2, another order; look at terminal n.1 and you will see the stock has changed again:	
+16. Now, from terminal n.2, simulate the arrival of new items in the store and check the updated value in terminal n.1:
+	
+	```
+    docker exec mysql mysql -u root -pok -e "INSERT INTO KAFKA.SOURCE_MOVEMENTS_TABLE (STORE_COD,PRODUCT_COD,MOV_QTA,INSERT_UPDATE_TIMESTAMP) SELECT 'STORE10','PROD2',2,CURRENT_TIMESTAMP;"
+    ```
+	
+Looking at termianl 1, you should see a line like this:
+    ```
+	{"row":{"columns":[1560414848456,"STORE10|+|PROD2","STORE10","PROD2",42]},"errorMessage":null,"finalMessage":null}
+	```
+	
+17. Again from terminal n.2, another order; look at terminal n.1 and you will see the stock has changed again:	
 	
 	```
     curl -X POST -H "Content-Type: application/vnd.kafka.json.v2+json" --data '{"records":[{"key":"STORE8","value":{"STORE_COD":"STORE8", "PRODUCT_COD":"PROD3", "SOLD_QTY":9}}]}' "http://ext_broker:8082/topics/ORDERS_LINES_TOPIC"
@@ -227,8 +260,19 @@ Looking at termianl 1, you should see a line like this:
     ```
 	{"row":{"columns":[1560411106820,"STORE8|+|PROD3","STORE8","PROD3",2]},"errorMessage":null,"finalMessage":null}
 	```
+	
+18. Again from terminal n.2, another order; look at terminal n.1 and you will see the stock has changed again:	
+	
+	```
+    curl -X POST -H "Content-Type: application/vnd.kafka.json.v2+json" --data '{"records":[{"key":"STORE10","value":{"STORE_COD":"STORE10", "PRODUCT_COD":"PROD2", "SOLD_QTY":20}}]}' "http://ext_broker:8082/topics/ORDERS_LINES_TOPIC"
+    ```
+	
+Looking at termianl 1, you should see a line like this:
+    ```
+	{"row":{"columns":[1560414883451,"STORE10|+|PROD2","STORE10","PROD2",22]},"errorMessage":null,"finalMessage":null}
+	```
 
-15. When you are satisfied, kill the continuous query and destroy the infrastructure.
+19. When you are satisfied, kill the continuous query and destroy the infrastructure.
 
 	```
     press CTRL+C
